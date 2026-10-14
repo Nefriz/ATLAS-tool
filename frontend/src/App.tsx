@@ -15,7 +15,7 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
-  const [activeTab, setActiveTab] = useState<SidebarTab>('islands')
+  const [activeTab, setActiveTab] = useState<SidebarTab>('resources')
   const [selectedResource, setSelectedResource] = useState<string | null>(null)
   const [selectedIslandId, setSelectedIslandId] = useState<number | null>(null)
   const [focusIslandId, setFocusIslandId] = useState<number | null>(null)
@@ -87,7 +87,7 @@ function App() {
     const matchesText = activeTab !== 'islands' || !term || `${island.name} ${island.id} ${island.position.grid}`.toLowerCase().includes(term)
     return matchesResource && matchesText
   }).sort((a, b) => a.name.localeCompare(b.name)) ?? [], [world, selectedResource, term, activeTab])
-  const filteredResources = useMemo(() => allResources.filter(item => item.name.toLowerCase().includes(activeTab === 'resources' ? term : '')), [allResources, activeTab, term])
+  const filteredResources = allResources
   const filteredIds = useMemo(() => new Set(filteredIslands.map(x => x.id)), [filteredIslands])
   const selectedIsland = useMemo(() => world?.islands.find(island => island.id === selectedIslandId) ?? null, [world, selectedIslandId])
 
@@ -144,7 +144,6 @@ function App() {
 
       <div className="workspace">
         <section className="map-workspace" aria-label="Interactive Atlas world map">
-          <div className="map-head"><div className="map-eyebrow"><span className="map-gold-dash"/> THE GREAT CHART</div><h1>Discover the <em>unknown.</em></h1><p>Navigate every island. Find what matters.</p></div>
           <div className="map-stage">
             {world && <AtlasMap world={world} selectedIslandId={selectedIslandId} onSelectIsland={selectIsland}
               focusIslandId={focusIslandId} focusToken={focusToken} gridVisible={gridVisible}
@@ -153,13 +152,14 @@ function App() {
             }
             {!world && <div className="map-loading"><Compass size={38}/><span>Loading nautical charts...</span></div>}
             {loading && world && <div className="map-loading map-loading--veil"><RefreshCw size={30} className="spin"/><span>Loading world...</span></div>}
-            <div className="map-label-upper"><Compass size={15}/> ATLAS CARTOGRAPHY <span>·</span> {world?.size_x ?? '–'}×{world?.size_y ?? '–'} CHART</div>
+            <div className="map-label-upper">
+              <Compass size={15}/>
+              ATLAS: {world?.name ?? worldId}</div>
             <div className="map-actions"><button aria-label="Zoom in" title="Zoom in" onClick={() => mapRef.current?.zoomIn(.5)}><Plus size={18}/></button><button aria-label="Zoom out" title="Zoom out" onClick={() => mapRef.current?.zoomOut(.5)}><Minus size={18}/></button><span className="tool-divider"/><button aria-label="Fit map" title="Fit entire map" onClick={resetView}><Maximize size={17}/></button><button aria-label="Toggle grid" title="Toggle grid" className={gridVisible ? 'tool-active' : ''} onClick={() => setGridVisible(value => !value)}><Grid2X2 size={17}/></button></div>
             {selectedResource && <div className="map-filter-tag"><Search size={13}/> {selectedResource} <span>· {filteredIslands.length} islands</span><button aria-label="Clear resource filter" onClick={() => selectResource(null)}><X size={13}/></button></div>}
-            <div className="map-bottom-left"><span className="map-coordinate-mark">⌖</span> SECTOR <strong>{hoverGrid}</strong><span className="map-status-divider"/> {world?.islands.length ?? 0} ISLANDS PLOTTED</div>
-            <div className="map-bottom-right"><span className="legend-blob"/> LAND MASS <span className="legend-dot"/> ISLAND CENTER</div>
+            <div className="map-bottom-left"><span className="map-coordinate-mark">⌖</span> Grid <strong>{hoverGrid}</strong></div>
+            <div className="map-bottom-right">SCROLL TO ZOOM <span>·</span> DRAG TO NAVIGATE</div>
           </div>
-          <div className="map-footer"><div><span className="footer-indicator"/> <strong>EXPLORATION MODE</strong><span className="footer-divider">·</span>{world?.name ?? 'Loading world'}</div><div className="map-footer-right">SCROLL TO ZOOM <span>·</span> DRAG TO NAVIGATE</div></div>
         </section>
         <Inspector island={selectedIsland} onClose={clearSelection} onLocate={() => selectedIslandId && selectIsland(selectedIslandId)} onResource={selectResource}/>
       </div>
