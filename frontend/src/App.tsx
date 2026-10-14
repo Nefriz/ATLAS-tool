@@ -17,6 +17,7 @@ function App() {
   const [search, setSearch] = useState('')
   const [activeTab, setActiveTab] = useState<SidebarTab>('resources')
   const [selectedResource, setSelectedResource] = useState<string | null>(null)
+  const [selectedAnimal, setSelectedAnimal] = useState<string | null>(null)
   const [selectedIslandId, setSelectedIslandId] = useState<number | null>(null)
   const [focusIslandId, setFocusIslandId] = useState<number | null>(null)
   const [focusToken, setFocusToken] = useState(0)
@@ -62,6 +63,7 @@ function App() {
       if (next.origin === 'api') setError(null)
       setSelectedIslandId(null)
       setSelectedResource(null)
+      setSelectedAnimal(null)
       setSearch('')
       setFocusToken(0)
       setLoading(false)
@@ -81,13 +83,30 @@ function App() {
   }, [worldId, refreshKey])
 
   const allResources = useMemo(() => world ? aggregateResources(world.islands) : [], [world])
-  const term = search.trim().toLowerCase()
-  const filteredIslands = useMemo(() => world?.islands.filter(island => {
-    const matchesResource = !selectedResource || Object.hasOwn(island.resources, selectedResource)
-    const matchesText = activeTab !== 'islands' || !term || `${island.name} ${island.id} ${island.position.grid}`.toLowerCase().includes(term)
-    return matchesResource && matchesText
-  }).sort((a, b) => a.name.localeCompare(b.name)) ?? [], [world, selectedResource, term, activeTab])
-  const filteredResources = allResources
+  const allAnimals = useMemo(() => {
+    if (!world) return []
+
+    return [...new Set(
+        world.islands.flatMap(island => island.animals ?? [])
+    )].sort((a, b) => a.localeCompare(b))
+  }, [world])
+  const filteredIslands = useMemo(() => {
+    if (!world) return []
+
+    return world.islands
+        .filter(island => {
+          const matchesResource =
+              !selectedResource ||
+              Object.hasOwn(island.resources, selectedResource)
+
+          const matchesAnimal =
+              !selectedAnimal ||
+              (island.animals ?? []).includes(selectedAnimal)
+
+          return matchesResource && matchesAnimal
+        })
+        .sort((a, b) => a.name.localeCompare(b.name))
+  }, [world, selectedResource, selectedAnimal])
   const filteredIds = useMemo(() => new Set(filteredIslands.map(x => x.id)), [filteredIslands])
   const selectedIsland = useMemo(() => world?.islands.find(island => island.id === selectedIslandId) ?? null, [world, selectedIslandId])
 
@@ -104,18 +123,52 @@ function App() {
   }
   const selectResource = (name: string | null) => {
     setSelectedResource(name)
-    if (name) { setActiveTab('resources'); setSearch('') }
+    setSelectedAnimal(null)
+
+    if (name) {
+      setActiveTab('resources')
+      setSearch('')
+    }
   }
+
+  const selectAnimal = (name: string | null) => {
+    setSelectedAnimal(name)
+    setSelectedResource(null)
+
+    if (name) {
+      setActiveTab('animals')
+      setSearch('')
+    }
+  }
+
+  const changeTab = (tab: SidebarTab) => {
+    setActiveTab(tab)
+    setSearch('')
+    setSelectedResource(null)
+    setSelectedAnimal(null)
+  }
+
   const clearSelection = () => { setSelectedIslandId(null); setFocusIslandId(null) }
 
   return <div className="atlas-app">
     <div className="top-hairline"/>
-    {world && <Sidebar
-      world={world} search={search} onSearch={setSearch} activeTab={activeTab} onTab={setActiveTab}
-      islands={filteredIslands} resources={filteredResources} selectedIslandId={selectedIslandId}
-      selectedResource={selectedResource} onSelectIsland={selectIsland} onSelectResource={selectResource}
-      mobileOpen={mobileOpen} onCloseMobile={() => setMobileOpen(false)}
-    />}
+    {world && (
+        <Sidebar
+            world={world}
+            search={search}
+            onSearch={setSearch}
+            activeTab={activeTab}
+            onTab={changeTab}
+            resources={allResources}
+            animals={allAnimals}
+            selectedResource={selectedResource}
+            selectedAnimal={selectedAnimal}
+            onSelectResource={selectResource}
+            onSelectAnimal={selectAnimal}
+            mobileOpen={mobileOpen}
+            onCloseMobile={() => setMobileOpen(false)}
+        />
+    )}
     {mobileOpen && <button aria-label="Close menu" className="mobile-scrim" onClick={() => setMobileOpen(false)}/>}
 
     <main className="main-area">
@@ -148,7 +201,7 @@ function App() {
             {world && <AtlasMap world={world} selectedIslandId={selectedIslandId} onSelectIsland={selectIsland}
               focusIslandId={focusIslandId} focusToken={focusToken} gridVisible={gridVisible}
               onMapReady={onMapReady} onHover={onHover} filterIds={filteredIds}
-              filtering={Boolean(selectedResource) || (activeTab === 'islands' && Boolean(term))}/>
+              filtering={Boolean(selectedResource || selectedAnimal)}/>
             }
             {!world && <div className="map-loading"><Compass size={38}/><span>Loading nautical charts...</span></div>}
             {loading && world && <div className="map-loading map-loading--veil"><RefreshCw size={30} className="spin"/><span>Loading world...</span></div>}

@@ -5,6 +5,7 @@ import {
 import { useEffect, useState } from 'react'
 import type { Island } from '../../types/world'
 import { getIslandImage } from '../../lib/islandImages'
+import { groupResources } from '../../lib/resourceGroups'
 
 interface Props {
   island: Island | null
@@ -72,7 +73,10 @@ export function Inspector({ island, onClose, onLocate, onResource }: Props) {
     )
   }
 
-  const resources = Object.entries(island.resources).sort(([a], [b]) => a.localeCompare(b))
+  const resourceGroups = groupResources(
+    Object.keys(island.resources).map(name => ({ name }))
+  )
+  const resourceCount = Object.keys(island.resources).length
 
 
   return (
@@ -105,14 +109,26 @@ export function Inspector({ island, onClose, onLocate, onResource }: Props) {
         <div className="inspector-divider" />
         <div className="section-heading">
           <Gem size={15} /><span>AVAILABLE RESOURCES</span>
-          <span className="section-count">{resources.length}</span>
+          <span className="section-count">{resourceCount}</span>
         </div>
-        {resources.length ? (
-          <div className="resource-chips">
-            {resources.map(([name]) => (
-              <button key={name} onClick={() => onResource(name)} title={`Filter map by ${name}`}>
-                <Gem size={12} />{name}
-              </button>
+        {resourceGroups.length > 0 ? (
+          <div className="inspector-resource-groups">
+            {resourceGroups.map(group => (
+              <section className="inspector-resource-group" key={group.name}>
+                <h3 className="inspector-resource-group-title">{group.name}</h3>
+                <div className="resource-chips">
+                  {group.resources.map(resource => (
+                    <button
+                      key={resource.name}
+                      type="button"
+                      title={`Filter map by ${resource.name}`}
+                      onClick={() => onResource(resource.name)}
+                    >
+                      <Gem size={12} />{resource.name}
+                    </button>
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         ) : <p className="muted-copy">No resources recorded for this island.</p>}
@@ -124,10 +140,9 @@ export function Inspector({ island, onClose, onLocate, onResource }: Props) {
         </div>
         {island.animals.length ? (
           <div className="wildlife-list">
-            {island.animals.slice(0, 14).map((animal, i) => (
+            {island.animals.map((animal, i) => (
               <span key={`${animal}-${i}`}>{animal}</span>
             ))}
-            {island.animals.length > 14 && <span>+{island.animals.length - 14} more</span>}
           </div>
         ) : <p className="muted-copy">No wildlife data available.</p>}
 

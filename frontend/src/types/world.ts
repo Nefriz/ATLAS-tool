@@ -34,4 +34,4 @@ export interface World {
   origin: 'api' | 'demo'
 }
 
-export type SidebarTab = 'islands' | 'resources'
+export type SidebarTab = 'resources' | 'animals'
