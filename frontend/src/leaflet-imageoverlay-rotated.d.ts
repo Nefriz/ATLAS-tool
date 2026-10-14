@@ -1,0 +1,1 @@
+declare module 'leaflet-imageoverlay-rotated/Leaflet.ImageOverlay.Rotated.js'
