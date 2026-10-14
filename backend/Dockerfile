@@ -3,7 +3,7 @@ FROM python:3.14-slim
 
 WORKDIR /app
 
-ENV PYTHONPATH=/app/app
+ENV PYTHONPATH=/app:/app/app
 ENV PYTHONUNBUFFERED=1
 
 RUN pip install --no-cache-dir poetry==2.5.1
