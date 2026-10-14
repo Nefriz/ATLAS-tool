@@ -1,7 +1,9 @@
 import { normalizeWorld } from './worlds'
 import type { World } from '../types/world'
 
-const BASE_URL = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/$/, '')
+const BASE_URL = import.meta.env.PROD
+    ? ''
+    : (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/$/, '')
 const configuredWorlds = (import.meta.env.VITE_WORLD_IDS || 'Potato - 8').split(',').map((x: string) => x.trim()).filter(Boolean)
 
 export const worldChoices = [
